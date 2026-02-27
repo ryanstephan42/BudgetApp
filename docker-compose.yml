@@ -1,0 +1,85 @@
+version: '3.8'
+
+services:
+  # 1. Database Service
+  db:
+    image: postgres:16-alpine
+    container_name: budget-db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER:-r}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+      POSTGRES_DB: ${DB_NAME:-budget}
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db_bkups:/docker-entrypoint-initdb.d
+    networks:
+      - budget-network
+
+  # 2. Backend API Service
+  backend:
+    build: ./server
+    container_name: budget-backend
+    restart: always
+    depends_on:
+      - db
+    environment:
+      PORT: 5500
+      DB_HOST: db # Points to the service name above
+      DB_USER: ${DB_USER:-r}
+      DB_PASSWORD: ${DB_PASSWORD:-password}
+      DB_NAME: ${DB_NAME:-budget}
+      DB_PORT: 5432
+    volumes:
+      - ./server/uploads:/app/uploads # Persist uploaded receipts
+    networks:
+      - budget-network
+
+  # 3. Frontend Service (Nginx + React)
+  frontend:
+    build: ./budget-app
+    container_name: budget-frontend
+    restart: always
+    ports:
+      - "3000:80" # Host Port 3000 -> Container Port 80
+    depends_on:
+      - backend
+    networks:
+      - budget-network
+      - home-server-tunnel
+
+  # 4. Automated Backup Service
+  backup:
+    image: prodrigestivill/postgres-backup-local
+    container_name: budget-backup
+    restart: always
+    depends_on:
+      - db
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_DB: ${DB_NAME:-budget}
+      POSTGRES_USER: ${DB_USER:-r}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+      # Schedule: Run every day at 3:00 AM
+      SCHEDULE: "0 3 * * *"
+      # Retention: Keep backups for 7 days, then delete
+      BACKUP_KEEP_DAYS: 7
+      # Optional: Add a prefix to the file name
+      POSTGRES_EXTRA_OPTS: "-Z9 --schema=public --blobs"
+    volumes:
+      # Map a folder on your host to store the backups
+      - ./db_bkups:/backups
+    networks:
+      - budget-network
+
+networks:
+  budget-network:
+    driver: bridge
+  home-server-tunnel:
+    driver: bridge
+    name: home-server-tunnel
+    external: true
+volumes:
+  postgres_data:
