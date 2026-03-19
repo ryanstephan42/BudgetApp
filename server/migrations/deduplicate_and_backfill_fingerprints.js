@@ -23,11 +23,13 @@ const deduplicateAndBackfill = async () => {
       // However, the CSV parser sends string. The DB stores DATE.
       // Let's use the ISO string part for consistency: YYYY-MM-DD.
       const dateStr = new Date(t.date).toISOString().split('T')[0];
+      const normalizedDescription = (t.description || '').trim();
+      const normalizedAmount = parseFloat(t.amount).toFixed(2);
       
       // Create hash
       const fingerprint = crypto
         .createHash('sha256')
-        .update(`${dateStr}-${t.description}-${t.amount}`)
+        .update(`${dateStr}-${normalizedDescription}-${normalizedAmount}`)
         .digest('hex');
 
       if (seenFingerprints.has(fingerprint)) {

@@ -18,9 +18,11 @@ const normalizeDate = (dateStr) => {
 // Helper function to generate fingerprint
 const generateFingerprint = (date, description, amount) => {
   const normalizedDate = normalizeDate(date);
+  const normalizedDescription = (description || '').trim();
+  const normalizedAmount = parseFloat(amount).toFixed(2);
   return crypto
     .createHash('sha256')
-    .update(`${normalizedDate}-${description}-${amount}`)
+    .update(`${normalizedDate}-${normalizedDescription}-${normalizedAmount}`)
     .digest('hex');
 };
 
@@ -119,6 +121,7 @@ router.post('/transactions', upload.single('receipt'), async (req, res) => {
     }
 
     let { date, description, amount, category, group_id, is_ignored, raw_data, is_split, split_details, receipt_path, debt_id } = transactionData;
+    description = (description || '').trim();
     const id = uuidv4();
 
     // Auto-categorize if not provided or Uncategorized
@@ -170,6 +173,7 @@ router.post('/transactions/bulk', async (req, res) => {
 
       for (const transaction of transactions) {
         let { date, description, amount, category, group_id, is_ignored, raw_data, is_split, split_details, receipt_path } = transaction;
+        description = (description || '').trim();
         const id = uuidv4();
         
         // Auto-categorize if not provided or Uncategorized
@@ -249,8 +253,21 @@ router.put('/transactions/:id', upload.single('receipt'), async (req, res) => {
     }
     const oldTransaction = oldTransactionResult.rows[0];
 
+    if (updates.description !== undefined) {
+      updates.description = updates.description.trim();
+    }
+
+    // Recalculate fingerprint if necessary
+    if (updates.date !== undefined || updates.description !== undefined || updates.amount !== undefined) {
+      const newDate = updates.date !== undefined ? updates.date : oldTransaction.date;
+      const newDescription = updates.description !== undefined ? updates.description : oldTransaction.description;
+      const newAmountVal = updates.amount !== undefined ? updates.amount : oldTransaction.amount;
+      
+      updates.fingerprint = generateFingerprint(newDate, newDescription, newAmountVal);
+    }
+
     const updateKeys = Object.keys(updates).filter(key =>
-      ['date', 'description', 'amount', 'category', 'group_id', 'is_ignored', 'raw_data', 'is_split', 'split_details', 'receipt_path', 'debt_id'].includes(key)
+      ['date', 'description', 'amount', 'category', 'group_id', 'is_ignored', 'raw_data', 'is_split', 'split_details', 'receipt_path', 'debt_id', 'fingerprint'].includes(key)
     );
 
     if (updateKeys.length === 0) {
