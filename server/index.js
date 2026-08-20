@@ -10,7 +10,9 @@ const app = express();
 const port = process.env.PORT || 3001;
 
 app.use(cors());
-app.use(express.json());
+// Bulk transaction imports (e.g. a full statement/CSV worth of transactions)
+// can exceed Express's default 100kb JSON body limit, causing 413s. Raise it.
+app.use(express.json({ limit: '25mb' }));
 
 // Use API routes
 app.use('/api', apiRoutes);
