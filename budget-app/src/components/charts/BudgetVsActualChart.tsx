@@ -80,10 +80,11 @@ const BudgetVsActualChart: React.FC<BudgetVsActualChartProps> = ({ data }) => {
       <BarChart data={finalFilteredData} layout="vertical" margin={{ top: 20, right: 30, left: 30, bottom: 5 }}>
         <XAxis type="number" domain={domain} />
         <YAxis type="category" dataKey="category" width={100} tick={<CustomYAxisTick />} />
-        <Tooltip formatter={(value: number, _: string, props: any) => {
+        <Tooltip formatter={(value: any, _name: any, props: any) => {
+            const val = typeof value === 'number' ? value : 0;
             const { payload } = props;
-            if (!payload) return [`Difference: $${value.toFixed(2)}`]; // Defensive check
-            return [`Difference: $${value.toFixed(2)}`, `Spent: $${payload.spent.toFixed(2)}`, `Allocated: $${payload.allocated.toFixed(2)}`];
+            if (!payload) return [`Difference: $${val.toFixed(2)}`]; // Defensive check
+            return [`Difference: $${val.toFixed(2)}`, `Spent: $${(payload.spent || 0).toFixed(2)}`, `Allocated: $${(payload.allocated || 0).toFixed(2)}`];
         }} />
         {/* Removed onClick from Legend as filtering is now handled by YAxis ticks */}
         <Legend /> 

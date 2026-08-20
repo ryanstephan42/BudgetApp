@@ -43,7 +43,7 @@ const SpendingPieChart: React.FC<SpendingPieChartProps> = ({ data }) => {
             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
           ))}
         </Pie>
-        <Tooltip formatter={(value: number) => `$${value.toFixed(2)}`} />
+        <Tooltip formatter={(value: any) => `$${(value || 0).toFixed(2)}`} />
         {/* Custom Legend to handle click events */}
         <Legend onClick={handleLegendItemClick} />
       </PieChart>

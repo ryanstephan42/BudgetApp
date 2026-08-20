@@ -1,4 +1,3 @@
-version: '3.8'
 
 services:
   # 1. Database Service
@@ -16,7 +15,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./db_bkups:/docker-entrypoint-initdb.d
     networks:
-      - budget-network
+      - home-network
 
   # 2. Backend API Service
   backend:
@@ -35,7 +34,7 @@ services:
     volumes:
       - ./server/uploads:/app/uploads # Persist uploaded receipts
     networks:
-      - budget-network
+      - home-network
 
   # 3. Frontend Service (Nginx + React)
   frontend:
@@ -47,8 +46,7 @@ services:
     depends_on:
       - backend
     networks:
-      - budget-network
-      - home-server-tunnel
+      - home-network
 
   # 4. Automated Backup Service
   backup:
@@ -72,14 +70,10 @@ services:
       # Map a folder on your host to store the backups
       - ./db_bkups:/backups
     networks:
-      - budget-network
+      - home-network
 
 networks:
-  budget-network:
-    driver: bridge
-  home-server-tunnel:
-    driver: bridge
-    name: home-server-tunnel
+  home-network:
     external: true
 volumes:
   postgres_data:

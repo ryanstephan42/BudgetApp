@@ -23,7 +23,7 @@ const CashFlowTrendChart: React.FC<CashFlowTrendChartProps> = ({ data }) => {
       >
         <XAxis dataKey="month" />
         <YAxis />
-        <Tooltip formatter={(value: number) => `$${value.toFixed(2)}`} />
+        <Tooltip formatter={(value: any) => `$${(value || 0).toFixed(2)}`} />
         <Legend />
         <Line type="monotone" dataKey="income" stroke="#00C49F" activeDot={{ r: 8 }} />
         <Line type="monotone" dataKey="expense" stroke="#FF0000" activeDot={{ r: 8 }} />
